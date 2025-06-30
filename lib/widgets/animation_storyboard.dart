@@ -9,12 +9,17 @@ class AnimationStoryboard extends StatefulWidget {
   final SchedulingAlgorithm algorithm;
   final int quantum;
 
-  const AnimationStoryboard({
-    super.key,
-    required this.processes,
-    required this.algorithm,
-    this.quantum = 2,
-  });
+  AnimationStoryboard({
+    Key? key,
+    List<Process>? processes,
+    SchedulingAlgorithm? algorithm,
+    int? quantum,
+  }) : processes = (processes == null || processes.isEmpty)
+           ? [Process(id: 1, arrivalTime: 0, burstTime: 1)]
+           : processes,
+       algorithm = algorithm ?? SchedulingAlgorithm.fcfs,
+       quantum = (quantum == null || quantum == 0) ? 1 : quantum,
+       super(key: key);
 
   @override
   State<AnimationStoryboard> createState() => _AnimationStoryboardState();
@@ -30,6 +35,56 @@ class _AnimationStoryboardState extends State<AnimationStoryboard> {
   int? remainingBurst;
   int rrTimeSlice = 0;
   bool isPlaying = true;
+  int? _rrQuantum;
+
+  Future<void> _askQuantumIfNeeded() async {
+    if (widget.algorithm == SchedulingAlgorithm.rr &&
+        (_rrQuantum == null || _rrQuantum! <= 0)) {
+      int? result = await showDialog<int>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          final controller = TextEditingController();
+          return AlertDialog(
+            title: const Text('لطفا مقدار کوانتوم را وارد کنید'),
+            content: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(hintText: 'مثلاً 2'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  final value = int.tryParse(controller.text);
+                  if (value != null && value > 0) {
+                    Navigator.of(context).pop(value);
+                  }
+                },
+                child: const Text('تایید'),
+              ),
+            ],
+          );
+        },
+      );
+      if (result != null && result > 0) {
+        setState(() {
+          _rrQuantum = result;
+        });
+      }
+    }
+  }
+
+  // SRT helpers as class fields
+  final Map<int, int> srtRemaining = {};
+  int remainingBurstFor(Process p) {
+    if (widget.algorithm == SchedulingAlgorithm.srt) {
+      if (!srtRemaining.containsKey(p.id)) {
+        srtRemaining[p.id] = p.burstTime;
+      }
+      return srtRemaining[p.id]!;
+    }
+    return p.burstTime;
+  }
 
   @override
   void initState() {
@@ -58,9 +113,9 @@ class _AnimationStoryboardState extends State<AnimationStoryboard> {
   }
 
   void _tick() {
+    int rrQuantum = _rrQuantum ?? widget.quantum;
     if (!mounted) return;
     setState(() {
-      // Add new arrivals
       for (var p in widget.processes) {
         if (p.arrivalTime == time &&
             !readyQueue.contains(p) &&
@@ -103,12 +158,39 @@ class _AnimationStoryboardState extends State<AnimationStoryboard> {
             remainingBurst = running!.burstTime;
             break;
           case SchedulingAlgorithm.srt:
-            break;
-          default:
+            readyQueue.sort(
+              (a, b) => remainingBurstFor(a).compareTo(remainingBurstFor(b)),
+            );
+            running = readyQueue.removeAt(0);
+            remainingBurst = remainingBurstFor(running!);
             break;
         }
         if (running != null) {
           gantt.add(GanttItem(processId: running!.id, start: time, end: time));
+        }
+      }
+
+      // SRT preemption: هر بار بررسی کن که آیا فرآیند جدید با زمان باقی‌مانده کمتر آمده است
+      if (widget.algorithm == SchedulingAlgorithm.srt &&
+          readyQueue.isNotEmpty) {
+        List<Process> allReady = [if (running != null) running!, ...readyQueue];
+        allReady.sort(
+          (a, b) => remainingBurstFor(a).compareTo(remainingBurstFor(b)),
+        );
+        if (running == null || running!.id != allReady.first.id) {
+          if (running != null) {
+            readyQueue.add(running!);
+          }
+          running = allReady.first;
+          readyQueue.removeWhere((p) => p.id == running!.id);
+          remainingBurst = remainingBurstFor(running!);
+          if (gantt.isEmpty ||
+              gantt.last.processId != running!.id ||
+              gantt.last.end != time) {
+            gantt.add(
+              GanttItem(processId: running!.id, start: time, end: time),
+            );
+          }
         }
       }
 
@@ -128,10 +210,29 @@ class _AnimationStoryboardState extends State<AnimationStoryboard> {
             running = null;
             remainingBurst = null;
             rrTimeSlice = 0;
-          } else if (rrTimeSlice == widget.quantum) {
+          } else if (rrTimeSlice == rrQuantum) {
             readyQueue.add(running!);
             running = null;
             rrTimeSlice = 0;
+          }
+        } else if (widget.algorithm == SchedulingAlgorithm.srt) {
+          // SRT: decrement remaining burst for running process
+          srtRemaining[running!.id] =
+              (srtRemaining[running!.id] ?? running!.burstTime) - 1;
+          remainingBurst = srtRemaining[running!.id]!;
+          if (gantt.isNotEmpty && gantt.last.processId == running!.id) {
+            gantt[gantt.length - 1] = GanttItem(
+              processId: running!.id,
+              start: gantt.last.start,
+              end: time + 1,
+            );
+          }
+          if (remainingBurst == 0) {
+            finished.add(running!);
+            running = null;
+            remainingBurst = null;
+            // Remove from readyQueue if present
+            readyQueue.removeWhere((p) => p.id == running?.id);
           }
         } else {
           remainingBurst = (remainingBurst ?? running!.burstTime) - 1;
@@ -166,8 +267,9 @@ class _AnimationStoryboardState extends State<AnimationStoryboard> {
     super.dispose();
   }
 
-  void _onPlay() {
+  void _onPlay() async {
     if (finished.length == widget.processes.length) return;
+    await _askQuantumIfNeeded();
     setState(() {
       isPlaying = true;
     });
@@ -201,7 +303,7 @@ class _AnimationStoryboardState extends State<AnimationStoryboard> {
         // Find all GanttItems for this process
         final ganttItems = gantt.where((g) => g.processId == p.id).toList();
         if (ganttItems.isEmpty) continue;
-        final startTime = ganttItems.first.start;
+        // حذف متغیر استفاده‌نشده startTime
         final finishTime = ganttItems.last.end;
         final turnaround = finishTime - p.arrivalTime;
         final waiting = turnaround - p.burstTime;

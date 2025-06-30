@@ -84,7 +84,8 @@ class _InputScreenState extends State<InputScreen> {
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 child: TextField(
                   decoration: InputDecoration(
-                    labelText: 'Quantum',
+                    labelText: 'کوانتوم (Quantum)',
+                    hintText: 'مثلاً 2',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -92,7 +93,13 @@ class _InputScreenState extends State<InputScreen> {
                     fillColor: Colors.white,
                   ),
                   keyboardType: TextInputType.number,
-                  onChanged: (val) => _quantum = int.tryParse(val) ?? 2,
+                  controller: TextEditingController(
+                    text: _quantum > 0 ? _quantum.toString() : '',
+                  ),
+                  onChanged: (val) {
+                    final v = int.tryParse(val);
+                    if (v != null && v > 0) setState(() => _quantum = v);
+                  },
                 ),
               ),
             Expanded(
