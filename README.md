@@ -94,7 +94,7 @@ timeslice/
 ## 🔗 نسخه آنلاین برنامه
 
 پلتفرم: Flutter Web  
-لینک دمو: [https://timeslice.vercel.app](https://timeslice.vercel.app)
+لینک دمو: [خروجی وب برنامه](https://time-slice-web.vercel.app/)
 
 ---
 
