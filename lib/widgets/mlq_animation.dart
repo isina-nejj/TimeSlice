@@ -4,15 +4,15 @@ import 'package:collection/collection.dart';
 import '../models/animation_step.dart';
 import '../models/process.dart';
 
-class HRRNAnimationWidget extends StatefulWidget {
+class MLQAnimationWidget extends StatefulWidget {
   final List<AnimationStep> steps;
-  const HRRNAnimationWidget({super.key, required this.steps});
+  const MLQAnimationWidget({super.key, required this.steps});
 
   @override
-  State<HRRNAnimationWidget> createState() => _HRRNAnimationWidgetState();
+  State<MLQAnimationWidget> createState() => _MLQAnimationWidgetState();
 }
 
-class _HRRNAnimationWidgetState extends State<HRRNAnimationWidget> {
+class _MLQAnimationWidgetState extends State<MLQAnimationWidget> {
   int currentStep = 0;
 
   void _nextStep() {
@@ -59,8 +59,6 @@ class _HRRNAnimationWidgetState extends State<HRRNAnimationWidget> {
                 processes: step.readyQueue,
                 highlight: step.running?.id,
                 color: Colors.blue.shade100,
-                currentTime: step.time,
-                showResponseRatio: true,
               ),
             ),
             Expanded(
@@ -108,15 +106,11 @@ class _ProcessList extends StatelessWidget {
   final List<Process> processes;
   final int? highlight;
   final Color color;
-  final int? currentTime;
-  final bool showResponseRatio;
   const _ProcessList({
     required this.title,
     required this.processes,
     this.highlight,
     required this.color,
-    this.currentTime,
-    this.showResponseRatio = false,
   });
 
   @override
@@ -128,10 +122,6 @@ class _ProcessList extends StatelessWidget {
         AnimationLimiter(
           child: Column(
             children: processes.mapIndexed((i, p) {
-              double? rr;
-              if (showResponseRatio && currentTime != null) {
-                rr = (currentTime! - p.arrivalTime + p.burstTime) / p.burstTime;
-              }
               return AnimationConfiguration.staggeredList(
                 position: i,
                 duration: const Duration(milliseconds: 400),
@@ -141,7 +131,6 @@ class _ProcessList extends StatelessWidget {
                     child: _ProcessCard(
                       process: p,
                       color: highlight == p.id ? Colors.orange.shade200 : color,
-                      responseRatio: rr,
                     ),
                   ),
                 ),
@@ -157,12 +146,7 @@ class _ProcessList extends StatelessWidget {
 class _ProcessCard extends StatelessWidget {
   final Process process;
   final Color color;
-  final double? responseRatio;
-  const _ProcessCard({
-    required this.process,
-    required this.color,
-    this.responseRatio,
-  });
+  const _ProcessCard({required this.process, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -170,20 +154,8 @@ class _ProcessCard extends StatelessWidget {
       color: color,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'P${process.id} | ورود: ${process.arrivalTime} | اجرا: ${process.burstTime} | اولویت: ${process.priority}',
-            ),
-            if (responseRatio != null) ...[
-              const SizedBox(width: 8),
-              Text(
-                'نسبیت پاسخ: ${responseRatio!.toStringAsFixed(2)}',
-                style: const TextStyle(color: Colors.deepPurple),
-              ),
-            ],
-          ],
+        child: Text(
+          'P${process.id} | ورود: ${process.arrivalTime} | اجرا: ${process.burstTime} | اولویت: ${process.priority}',
         ),
       ),
     );

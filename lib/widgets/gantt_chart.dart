@@ -13,11 +13,10 @@ class GanttChart extends StatelessWidget {
         .reduce((a, b) => a < b ? a : b);
     int maxTime = ganttItems.map((g) => g.end).reduce((a, b) => a > b ? a : b);
     double totalDuration = (maxTime - minTime).toDouble();
-    // حداقل عرض هر بلاک برای دیده شدن
     const double minBlockWidth = 32.0;
     const double maxBlockWidth = 200.0;
     const double chartWidth =
-        400.0; // یا MediaQuery.of(context).size.width اگر بخواهی داینامیک باشد
+        400.0; 
     return SizedBox(
       height: 80,
       child: ListView.builder(

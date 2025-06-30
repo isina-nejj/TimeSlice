@@ -1,1 +1,1 @@
-enum SchedulingAlgorithm { fcfs, sjf, rr, priority, hrrn }
+enum SchedulingAlgorithm { fcfs, sjf, rr, priority, hrrn, srt }

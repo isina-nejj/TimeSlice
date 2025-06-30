@@ -8,7 +8,6 @@ ScheduleResult rr(List<Process> processes, {int quantum = 2}) {
   List<GanttItem> gantt = [];
   double totalWaiting = 0;
   double totalTurnaround = 0;
-  List<int> lastEnd = List.filled(queue.length, 0);
   while (queue.any((p) => remaining[queue.indexOf(p)] > 0)) {
     for (int i = 0; i < queue.length; i++) {
       if (remaining[i] > 0 && queue[i].arrivalTime <= time) {

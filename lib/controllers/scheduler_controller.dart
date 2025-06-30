@@ -7,6 +7,7 @@ import '../algorithms/rr.dart';
 import '../algorithms/priority.dart';
 
 import '../algorithms/hrrn.dart';
+import '../algorithms/srt.dart';
 import '../models/animation_step.dart';
 
 class SchedulerController {
@@ -26,10 +27,11 @@ class SchedulerController {
         return priorityScheduling(processes);
       case SchedulingAlgorithm.hrrn:
         return hrrnWithSteps(processes).result;
+      case SchedulingAlgorithm.srt:
+        return srt(processes);
     }
   }
 
-  /// فقط برای انیمیشن HRRN
   List<AnimationStep> hrrnAnimationSteps(List<Process> processes) {
     return hrrnWithSteps(processes).animationSteps;
   }

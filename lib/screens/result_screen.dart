@@ -3,7 +3,8 @@ import '../core/enums.dart';
 import '../models/process.dart';
 import '../controllers/scheduler_controller.dart';
 import '../widgets/gantt_chart.dart';
-import '../widgets/process_table.dart';
+// import '../widgets/process_table.dart';
+import '../widgets/animation_storyboard.dart';
 import '../models/schedule_result.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -61,10 +62,10 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
           const SizedBox(height: 16),
           if (showAnimation)
-            _SchedulingAnimation(
-              ganttItems: result.ganttChart,
+            AnimationStoryboard(
               processes: widget.processes,
               algorithm: widget.algorithm,
+              quantum: widget.quantum,
             ),
           if (!showAnimation) ...[
             GanttChart(ganttItems: result.ganttChart),
@@ -127,7 +128,14 @@ class _SchedulingAnimation extends StatefulWidget {
 
 class _SchedulingAnimationState extends State<_SchedulingAnimation>
     with SingleTickerProviderStateMixin {
+  String _shortenText(String text, {int maxLength = 30}) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  }
+
   int currentStep = 0;
+
+  // ...existing code...
 
   @override
   void initState() {
@@ -147,67 +155,86 @@ class _SchedulingAnimationState extends State<_SchedulingAnimation>
   @override
   Widget build(BuildContext context) {
     final shownItems = widget.ganttItems.take(currentStep).toList();
-    return Column(
-      children: [
-        SizedBox(
-          height: 90,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: shownItems.length,
-            itemBuilder: (context, i) {
-              final item = shownItems[i];
-              final process = widget.processes.firstWhere(
-                (p) => p.id == item.processId,
-              );
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 700),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: (item.end - item.start) * 40.0,
-                decoration: BoxDecoration(
-                  color: Colors
-                      .primaries[item.processId % Colors.primaries.length],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.black12, width: 2),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'P${item.processId}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      Text(
-                        '${item.start} - ${item.end}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          _explainStep(item, process, widget.algorithm),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black87,
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(
+              height: 90,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: shownItems.length,
+                itemBuilder: (context, i) {
+                  final item = shownItems[i];
+                  final process = widget.processes.firstWhere(
+                    (p) => p.id == item.processId,
+                  );
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 700),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: (item.end - item.start) * 40.0,
+                    decoration: BoxDecoration(
+                      color: Colors
+                          .primaries[item.processId % Colors.primaries.length],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.black12, width: 2),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'P${item.processId}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
+                          Text(
+                            '${item.start} - ${item.end}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Tooltip(
+                              message: _explainStep(
+                                item,
+                                process,
+                                widget.algorithm,
+                              ),
+                              child: SelectableText(
+                                _shortenText(
+                                  _explainStep(item, process, widget.algorithm),
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                // toolbarOptions: ToolbarOptions(
+                                //   copy: true,
+                                //   selectAll: true,
+                                // ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+                    ),
+                  );
+                  // ...existing code...
+                },
+              ),
+            ),
+            if (currentStep == 0)
+              const Padding(
+                padding: EdgeInsets.all(12.0),
+                child: Text('در حال آماده‌سازی انیمیشن ...'),
+              ),
+          ],
         ),
-        if (currentStep == 0)
-          const Padding(
-            padding: EdgeInsets.all(12.0),
-            child: Text('در حال آماده‌سازی انیمیشن ...'),
-          ),
-      ],
+      ),
     );
   }
 
@@ -227,6 +254,10 @@ class _SchedulingAnimationState extends State<_SchedulingAnimation>
         return 'فرآیند ${item.processId} با اولویت بالاتر انتخاب شد (Priority)';
       case SchedulingAlgorithm.hrrn:
         return 'فرآیند ${item.processId} با بالاترین نسبت پاسخ انتخاب شد (HRRN)';
+      case SchedulingAlgorithm.srt:
+        return 'فرآیند ${item.processId} با کمترین زمان باقی‌مانده اجرا شد (SRT)';
+      default:
+        return 'فرآیند ${item.processId} اجرا شد.';
     }
   }
 }

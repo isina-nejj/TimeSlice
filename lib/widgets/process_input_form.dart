@@ -3,16 +3,37 @@ import '../models/process.dart';
 
 class ProcessInputForm extends StatefulWidget {
   final void Function(List<Process>) onSubmit;
-  const ProcessInputForm({super.key, required this.onSubmit});
+  final List<Process>? initialProcesses;
+  const ProcessInputForm({
+    super.key,
+    required this.onSubmit,
+    this.initialProcesses,
+  });
 
   @override
   State<ProcessInputForm> createState() => _ProcessInputFormState();
 }
 
 class _ProcessInputFormState extends State<ProcessInputForm> {
-  final List<Process> _processes = [];
+  late List<Process> _processes;
   final _formKey = GlobalKey<FormState>();
   int _id = 1;
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialProcesses != null &&
+        widget.initialProcesses!.isNotEmpty) {
+      _processes = List.from(widget.initialProcesses!);
+      _id =
+          _processes
+              .map((p) => p.id)
+              .fold(0, (prev, id) => id > prev ? id : prev) +
+          1;
+    } else {
+      _processes = [];
+    }
+  }
+
   final TextEditingController _arrivalController = TextEditingController();
   final TextEditingController _burstController = TextEditingController();
   final TextEditingController _priorityController = TextEditingController();
