@@ -35,44 +35,7 @@ class _AnimationStoryboardState extends State<AnimationStoryboard> {
   int? remainingBurst;
   int rrTimeSlice = 0;
   bool isPlaying = true;
-  int? _rrQuantum;
-
-  Future<void> _askQuantumIfNeeded() async {
-    if (widget.algorithm == SchedulingAlgorithm.rr &&
-        (_rrQuantum == null || _rrQuantum! <= 0)) {
-      int? result = await showDialog<int>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          final controller = TextEditingController();
-          return AlertDialog(
-            title: const Text('لطفا مقدار کوانتوم را وارد کنید'),
-            content: TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(hintText: 'مثلاً 2'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  final value = int.tryParse(controller.text);
-                  if (value != null && value > 0) {
-                    Navigator.of(context).pop(value);
-                  }
-                },
-                child: const Text('تایید'),
-              ),
-            ],
-          );
-        },
-      );
-      if (result != null && result > 0) {
-        setState(() {
-          _rrQuantum = result;
-        });
-      }
-    }
-  }
+  // حذف متغیر و دیالوگ کوانتوم؛ فقط از widget.quantum استفاده شود
 
   // SRT helpers as class fields
   final Map<int, int> srtRemaining = {};
@@ -113,7 +76,7 @@ class _AnimationStoryboardState extends State<AnimationStoryboard> {
   }
 
   void _tick() {
-    int rrQuantum = _rrQuantum ?? widget.quantum;
+    int rrQuantum = widget.quantum;
     if (!mounted) return;
     setState(() {
       for (var p in widget.processes) {
@@ -267,9 +230,8 @@ class _AnimationStoryboardState extends State<AnimationStoryboard> {
     super.dispose();
   }
 
-  void _onPlay() async {
+  void _onPlay() {
     if (finished.length == widget.processes.length) return;
-    await _askQuantumIfNeeded();
     setState(() {
       isPlaying = true;
     });

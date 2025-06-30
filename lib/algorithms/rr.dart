@@ -8,6 +8,11 @@ ScheduleResult rr(List<Process> processes, {int quantum = 2}) {
   List<GanttItem> gantt = [];
   double totalWaiting = 0;
   double totalTurnaround = 0;
+  queue.sort(
+    (a, b) => a.arrivalTime != b.arrivalTime
+        ? a.arrivalTime.compareTo(b.arrivalTime)
+        : a.id.compareTo(b.id),
+  );
   while (queue.any((p) => remaining[queue.indexOf(p)] > 0)) {
     for (int i = 0; i < queue.length; i++) {
       if (remaining[i] > 0 && queue[i].arrivalTime <= time) {
@@ -33,4 +38,5 @@ ScheduleResult rr(List<Process> processes, {int quantum = 2}) {
     avgWaitingTime: totalWaiting / processes.length,
     avgTurnaroundTime: totalTurnaround / processes.length,
   );
+  throw UnimplementedError('This line should never be reached.');
 }

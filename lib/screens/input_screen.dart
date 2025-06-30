@@ -38,9 +38,15 @@ class _InputScreenState extends State<InputScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  final value = int.tryParse(controller.text);
+                  // مقدار پیش‌فرض 1 اگر خالی بود
+                  final value = controller.text.trim().isEmpty
+                      ? 1
+                      : int.tryParse(controller.text);
                   if (value != null && value > 0) {
                     Navigator.of(context).pop(value);
+                  } else {
+                    // اگر مقدار نامعتبر بود، مقدار 1 قرار بده
+                    Navigator.of(context).pop(1);
                   }
                 },
                 child: const Text('تایید'),
@@ -49,12 +55,7 @@ class _InputScreenState extends State<InputScreen> {
           );
         },
       );
-      if (result != null && result > 0) {
-        quantum = result;
-      } else {
-        // اگر کاربر مقدار معتبر وارد نکرد، خروج
-        return;
-      }
+      quantum = (result != null && result > 0) ? result : 1;
     }
     Navigator.push(
       context,
