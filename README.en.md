@@ -1,4 +1,9 @@
 
+<p align="center">
+  <b>🗣 Language | زبان:</b>
+  🇬🇧 English | <a href="README.md">فارسی</a>
+</p>
+
 # ⏱️ TimeSlice
 
 **TimeSlice** is a visual and interactive simulator of CPU scheduling algorithms (like FCFS, SJF, Round Robin) built with Flutter. It aims to help students and developers understand how operating systems manage processes in real-time.
@@ -66,7 +71,3 @@ flutter run -d chrome
 ## 📄 License
 
 Licensed under the MIT License.
-
----
-
-📖 [Read this in Persian (فارسی)](README.fa.md)
