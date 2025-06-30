@@ -17,17 +17,52 @@ class _InputScreenState extends State<InputScreen> {
   List<Process> _processes = List.from(sampleProcesses);
   int _quantum = 2;
 
-  void _onSubmit(List<Process> processes) {
+  Future<void> _onSubmit(List<Process> processes) async {
     setState(() {
       _processes = processes;
     });
+    int quantum = _quantum;
+    if (_algorithm == SchedulingAlgorithm.rr) {
+      final result = await showDialog<int>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          final controller = TextEditingController();
+          return AlertDialog(
+            title: const Text('لطفا مقدار کوانتوم را وارد کنید'),
+            content: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(hintText: 'مثلاً 2'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  final value = int.tryParse(controller.text);
+                  if (value != null && value > 0) {
+                    Navigator.of(context).pop(value);
+                  }
+                },
+                child: const Text('تایید'),
+              ),
+            ],
+          );
+        },
+      );
+      if (result != null && result > 0) {
+        quantum = result;
+      } else {
+        // اگر کاربر مقدار معتبر وارد نکرد، خروج
+        return;
+      }
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ResultScreen(
           algorithm: _algorithm,
           processes: _processes,
-          quantum: _quantum,
+          quantum: quantum,
         ),
       ),
     );
@@ -79,29 +114,7 @@ class _InputScreenState extends State<InputScreen> {
                 },
               ),
             ),
-            if (_algorithm == SchedulingAlgorithm.rr)
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: 'کوانتوم (Quantum)',
-                    hintText: 'مثلاً 2',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  keyboardType: TextInputType.number,
-                  controller: TextEditingController(
-                    text: _quantum > 0 ? _quantum.toString() : '',
-                  ),
-                  onChanged: (val) {
-                    final v = int.tryParse(val);
-                    if (v != null && v > 0) setState(() => _quantum = v);
-                  },
-                ),
-              ),
+            // فیلد ورودی کوانتوم حذف شد
             Expanded(
               child: ProcessInputForm(
                 onSubmit: _onSubmit,
